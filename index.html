@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Shooting Game</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrolling */
+        background-color: black; /* Set background to black */
+        display: flex; /* Enable Flexbox */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        height: 100vh; /* Full viewport height */
+      }
+      canvas {
+        display: block;
+        background-color: black; /* Canvas background to match the body */
+        cursor: none; /* Hide the mouse cursor when over the canvas */
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <script type='text/javascript'>
+      var Module = {
+        print: (function() {
+          return (...args) => console.log(args.join(' '));
+        })(),
+        canvas: document.getElementById('canvas'),
+        setStatus: (text) => console.log(text),
+        totalDependencies: 0,
+        monitorRunDependencies: (left) => {
+          console.log(`Dependencies left: ${left}`);
+        }
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = (event) => {
+        Module.setStatus('Exception thrown, see JavaScript console');
+        console.error(event);
+      };
+    </script>
+    <script async type="text/javascript" src="index.js"></script>
+  </body>
+</html>
