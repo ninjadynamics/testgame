@@ -1,47 +1,146 @@
 <!doctype html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Shooting Game</title>
-    <style>
-      body, html {
-        margin: 0;
-        padding: 0;
-        overflow: hidden; /* Prevent scrolling */
-        background-color: black; /* Set background to black */
-        display: flex; /* Enable Flexbox */
-        justify-content: center; /* Center horizontally */
-        align-items: center; /* Center vertically */
-        height: 100vh; /* Full viewport height */
-      }
-      canvas {
-        display: block;
-        background-color: black; /* Canvas background to match the body */
-        cursor: none; /* Hide the mouse cursor when over the canvas */
-      }
-    </style>
-  </head>
-  <body>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Ensure proper scaling on mobile devices -->
+  <title>Shooting Game</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Prevent scrolling */
+      background-color: black; /* Set background to black */
+      height: 100%; /* Full height */
+      width: 100%; /* Full width */
+    }
+
+    /* Centering container */
+    #canvas-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      image-rendering: auto;
+    }
+
+    canvas {
+      display: block;
+      background-color: black; /* Canvas background to match the body */
+      cursor: none; /* Initially hide the mouse cursor */
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
     <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
-    <script type='text/javascript'>
-      var Module = {
-        print: (function() {
-          return (...args) => console.log(args.join(' '));
-        })(),
-        canvas: document.getElementById('canvas'),
-        setStatus: (text) => console.log(text),
-        totalDependencies: 0,
-        monitorRunDependencies: (left) => {
-          console.log(`Dependencies left: ${left}`);
-        }
-      };
-      Module.setStatus('Downloading...');
-      window.onerror = (event) => {
-        Module.setStatus('Exception thrown, see JavaScript console');
-        console.error(event);
-      };
-    </script>
-    <script async type="text/javascript" src="index.js"></script>
-  </body>
+  </div>
+  <script type='text/javascript'>
+    var Module = {
+      print: (function() {
+        return (...args) => console.log(args.join(' '));
+      })(),
+      canvas: (function() {
+        var canvas = document.getElementById('canvas');
+        canvas.width = 1280; // Updated to 1280x720
+        canvas.height = 720;
+        return canvas;
+      })(),
+      setStatus: (text) => console.log(text),
+      totalDependencies: 0,
+      monitorRunDependencies: (left) => {
+        console.log(`Dependencies left: ${left}`);
+      }
+    };
+    Module.setStatus('Downloading...');
+    window.onerror = (event) => {
+      Module.setStatus('Exception thrown, see JavaScript console');
+      console.error(event);
+    };
+
+    // Function to scale or center the canvas
+    function resizeCanvas() {
+      var canvas = Module.canvas;
+      var container = document.getElementById('canvas-container');
+
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+
+      var originalWidth = canvas.width;
+      var originalHeight = canvas.height;
+
+      if (windowWidth > originalWidth) {
+        // Center canvas without scaling
+        container.style.transform = 'translate(-50%, -50%) scale(1)';
+      } else {
+        // Scale the canvas to fit the screen while maintaining aspect ratio
+        var scale = Math.min(windowWidth / originalWidth, windowHeight / originalHeight);
+        container.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+    document.addEventListener('DOMContentLoaded', resizeCanvas);
+  </script>
+  
+  <!-- Touch Event Handling Scripts -->
+  <script type='text/javascript'>
+    // Touch event handling to simulate mouse events
+    (function() {
+      var canvas = Module.canvas;
+
+      // Helper function to get touch position relative to the viewport
+      function getTouchPos(touchEvent) {
+        var touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+        return {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        };
+      }
+
+      // Function to simulate mouse events
+      function simulateMouseEvent(type, pos) {
+        var event = new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          clientX: pos.clientX,
+          clientY: pos.clientY,
+          button: 0 // Left button
+        });
+        canvas.dispatchEvent(event);
+      }
+
+      // Touch start - Simulate click
+      canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent default touch actions like scrolling
+
+        var pos = getTouchPos(e);
+        simulateMouseEvent('mousemove', pos);
+        simulateMouseEvent('mousedown', pos);
+        simulateMouseEvent('mouseup', pos);
+        simulateMouseEvent('click', pos);
+      }, { passive: false });
+
+      // Touch move - Simulate mousemove
+      canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault(); // Prevent default touch actions like scrolling
+
+        var pos = getTouchPos(e);
+        simulateMouseEvent('mousemove', pos);
+      }, { passive: false });
+
+      // Optional: Touch end - If additional actions are needed
+      // canvas.addEventListener('touchend', function(e) {
+      //   e.preventDefault(); // Prevent default touch actions like scrolling
+      //   var pos = getTouchPos(e);
+      //   simulateMouseEvent('mouseup', pos);
+      // }, { passive: false });
+    })();
+  </script>
+
+  <script async type="text/javascript" src="index.js"></script>
+</body>
 </html>
