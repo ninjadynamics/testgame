@@ -1,146 +1,252 @@
 <!doctype html>
 <html lang="en-us">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Ensure proper scaling on mobile devices -->
-  <title>Shooting Game</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden; /* Prevent scrolling */
-      background-color: black; /* Set background to black */
-      height: 100%; /* Full height */
-      width: 100%; /* Full width */
-    }
-
-    /* Centering container */
-    #canvas-container {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      image-rendering: auto;
-    }
-
-    canvas {
-      display: block;
-      background-color: black; /* Canvas background to match the body */
-      cursor: none; /* Initially hide the mouse cursor */
-      outline: none;
-    }
-  </style>
-</head>
-<body>
-  <div id="canvas-container">
-    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
-  </div>
-  <script type='text/javascript'>
-    var Module = {
-      print: (function() {
-        return (...args) => console.log(args.join(' '));
-      })(),
-      canvas: (function() {
-        var canvas = document.getElementById('canvas');
-        canvas.width = 1280; // Updated to 1280x720
-        canvas.height = 720;
-        return canvas;
-      })(),
-      setStatus: (text) => console.log(text),
-      totalDependencies: 0,
-      monitorRunDependencies: (left) => {
-        console.log(`Dependencies left: ${left}`);
-      }
-    };
-    Module.setStatus('Downloading...');
-    window.onerror = (event) => {
-      Module.setStatus('Exception thrown, see JavaScript console');
-      console.error(event);
-    };
-
-    // Function to scale or center the canvas
-    function resizeCanvas() {
-      var canvas = Module.canvas;
-      var container = document.getElementById('canvas-container');
-
-      var windowWidth = window.innerWidth;
-      var windowHeight = window.innerHeight;
-
-      var originalWidth = canvas.width;
-      var originalHeight = canvas.height;
-
-      if (windowWidth > originalWidth) {
-        // Center canvas without scaling
-        container.style.transform = 'translate(-50%, -50%) scale(1)';
-      } else {
-        // Scale the canvas to fit the screen while maintaining aspect ratio
-        var scale = Math.min(windowWidth / originalWidth, windowHeight / originalHeight);
-        container.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
-      }
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', resizeCanvas);
-    document.addEventListener('DOMContentLoaded', resizeCanvas);
-  </script>
-  
-  <!-- Touch Event Handling Scripts -->
-  <script type='text/javascript'>
-    // Touch event handling to simulate mouse events
-    (function() {
-      var canvas = Module.canvas;
-
-      // Helper function to get touch position relative to the viewport
-      function getTouchPos(touchEvent) {
-        var touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
-        return {
-          clientX: touch.clientX,
-          clientY: touch.clientY
-        };
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shooting Game</title>
+    
+    <!-- Include Orbitron Font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrolling */
+        background-color: black;
+        height: 100%;
+        width: 100%;
+        /* Do not set touch-action: none; to allow first touch to unlock audio */
       }
 
-      // Function to simulate mouse events
-      function simulateMouseEvent(type, pos) {
-        var event = new MouseEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          clientX: pos.clientX,
-          clientY: pos.clientY,
-          button: 0 // Left button
-        });
-        canvas.dispatchEvent(event);
+      canvas.emscripten {
+        display: block;
+        background-color: black;
+        cursor: none;
+        outline: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        image-rendering: auto;
       }
 
-      // Touch start - Simulate click
-      canvas.addEventListener('touchstart', function(e) {
-        e.preventDefault(); // Prevent default touch actions like scrolling
+      /* Styles for the Tap to Start overlay */
+      #start-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9); /* Slightly transparent black overlay */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* Ensure it covers the canvas */
+        cursor: pointer;
+        user-select: none;
+      }
 
-        var pos = getTouchPos(e);
-        simulateMouseEvent('mousemove', pos);
-        simulateMouseEvent('mousedown', pos);
-        simulateMouseEvent('mouseup', pos);
-        simulateMouseEvent('click', pos);
-      }, { passive: false });
+      /* Only the text blinks now */
+      #start-screen span {
+        color: #00ffea; /* Neon-like color for futuristic feel */
+        font-size: 2.5em;
+        font-family: 'Orbitron', sans-serif; /* Apply Orbitron font */
+        text-shadow: 0 0 10px #00ffea, 0 0 20px #00ffea, 0 0 30px #00ffea;
+        animation: blink 1s infinite linear; /* Slower blink at 1 second intervals */
+      }
 
-      // Touch move - Simulate mousemove
-      canvas.addEventListener('touchmove', function(e) {
-        e.preventDefault(); // Prevent default touch actions like scrolling
+      #start-screen.hidden {
+        display: none;
+      }
 
-        var pos = getTouchPos(e);
-        simulateMouseEvent('mousemove', pos);
-      }, { passive: false });
+      /* Blinking Animation for the text */
+      @keyframes blink {
+        0%, 100% { opacity: 1; } /* Fully visible */
+        50% { opacity: 0; }     /* Invisible */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Canvas Element -->
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 
-      // Optional: Touch end - If additional actions are needed
-      // canvas.addEventListener('touchend', function(e) {
-      //   e.preventDefault(); // Prevent default touch actions like scrolling
-      //   var pos = getTouchPos(e);
-      //   simulateMouseEvent('mouseup', pos);
-      // }, { passive: false });
-    })();
-  </script>
+    <!-- Tap to Start Overlay -->
+    <div id="start-screen" class="hidden">
+      <span>Tap to Start</span> <!-- Only this text will blink -->
+    </div>
 
-  <script async type="text/javascript" src="index.js"></script>
-</body>
+    <script type='text/javascript'>
+      var Module = {
+        print: function() {
+          return function() {
+            console.log.apply(console, arguments);
+          };
+        }(),
+        canvas: function() {
+          var canvas = document.getElementById('canvas');
+          canvas.width = 1280;
+          canvas.height = 720;
+          return canvas;
+        }(),
+        setStatus: function(text) {
+          console.log(text);
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          console.log('Dependencies left: ' + left);
+        }
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = function(event) {
+        Module.setStatus('Exception thrown, see JavaScript console');
+        console.error(event);
+      };
+
+      // Function to scale or center the canvas
+      function resizeCanvas() {
+        var canvas = Module.canvas;
+
+        var windowWidth = window.innerWidth;
+        var windowHeight = window.innerHeight;
+
+        var originalWidth = canvas.width;
+        var originalHeight = canvas.height;
+
+        if (windowWidth > originalWidth) {
+          // Center canvas without scaling
+          canvas.style.transform = 'translate(-50%, -50%) scale(1)';
+        } else {
+          // Scale the canvas to fit the screen while maintaining aspect ratio
+          var scale = Math.min(windowWidth / originalWidth, windowHeight / originalHeight);
+          canvas.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+        }
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      window.addEventListener('orientationchange', resizeCanvas);
+      document.addEventListener('DOMContentLoaded', resizeCanvas);
+    </script>
+
+    <!-- Audio Unlock and Touch Event Handling Scripts -->
+    <script type='text/javascript'>
+      (function() {
+        var canvas = Module.canvas;
+        var audioUnlocked = false; // Flag to track if audio is unlocked
+
+        function unlockAudio() {
+          if (!audioUnlocked) {
+            if (Module['SDL2'] && Module['SDL2'].audioContext && Module['SDL2'].audioContext.state === 'suspended') {
+              Module['SDL2'].audioContext.resume().then(function() {
+                console.log('Audio context resumed');
+                audioUnlocked = true;
+              }).catch(function(e) {
+                console.log('Audio context resume failed:', e);
+              });
+            } else {
+              // Audio context is already running or not available
+              audioUnlocked = true;
+            }
+          }
+        }
+
+        // Helper function to get touch position relative to the viewport
+        function getTouchPos(touchEvent) {
+          var touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+          return {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          };
+        }
+
+        // Function to simulate mouse events
+        function simulateMouseEvent(type, pos) {
+          var event = new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: pos.clientX,
+            clientY: pos.clientY,
+            button: 0
+          });
+          canvas.dispatchEvent(event);
+        }
+
+        // Detect if the device is mobile
+        function isMobile() {
+          return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Initialize the Tap to Start overlay for mobile devices
+        function initStartScreen() {
+          var startScreen = document.getElementById('start-screen');
+
+          if (isMobile()) {
+            startScreen.classList.remove('hidden');
+
+            function startGame(e) {
+              e.preventDefault();
+              unlockAudio(); // Unlock audio on tap
+
+              // Remove the overlay
+              startScreen.classList.add('hidden');
+            }
+
+            // Handle both click and touchstart events
+            startScreen.addEventListener('click', startGame);
+            startScreen.addEventListener('touchstart', startGame, { passive: false });
+          }
+        }
+
+        // Initialize the start screen when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initStartScreen);
+
+        // Touch start - Simulate click
+        canvas.addEventListener('touchstart', function(e) {
+          if (!audioUnlocked) {
+            // If the start screen is visible, do not process touch events
+            var startScreen = document.getElementById('start-screen');
+            if (!startScreen.classList.contains('hidden')) {
+              // Let the start screen handle the audio unlock
+              return;
+            }
+            unlockAudio(); // Attempt to unlock audio on first touch
+            // Do not preventDefault or process the event further
+            return; // Allow the event to propagate
+          }
+
+          // After audio is unlocked, prevent default behavior and process touch
+          e.preventDefault();
+
+          var pos = getTouchPos(e);
+          simulateMouseEvent('mousemove', pos);
+          simulateMouseEvent('mousedown', pos);
+          simulateMouseEvent('mouseup', pos);
+          simulateMouseEvent('click', pos);
+        }, { passive: false });
+
+        // Touch move - Simulate mousemove
+        canvas.addEventListener('touchmove', function(e) {
+          if (!audioUnlocked) {
+            // Do not preventDefault or process the event
+            return; // Allow the event to propagate
+          }
+
+          e.preventDefault();
+
+          var pos = getTouchPos(e);
+          simulateMouseEvent('mousemove', pos);
+        }, { passive: false });
+
+        // Also unlock audio on mousedown (for desktop browsers)
+        canvas.addEventListener('mousedown', function(e) {
+          if (!audioUnlocked) {
+            unlockAudio();
+          }
+        }, { capture: true });
+      })();
+    </script>
+
+    <script async type="text/javascript" src="index.js"></script>
+  </body>
 </html>
