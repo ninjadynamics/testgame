@@ -73,7 +73,7 @@
 
     <!-- Tap to Start Overlay -->
     <div id="start-screen" class="hidden">
-      <span>Tap to Start</span> <!-- Only this text will blink -->
+      <span>Click/Tap to Start</span> <!-- Only this text will blink -->
     </div>
 
     <script type='text/javascript'>
@@ -172,30 +172,23 @@
           canvas.dispatchEvent(event);
         }
 
-        // Detect if the device is mobile
-        function isMobile() {
-          return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
         // Initialize the Tap to Start overlay for mobile devices
         function initStartScreen() {
           var startScreen = document.getElementById('start-screen');
 
-          if (isMobile()) {
-            startScreen.classList.remove('hidden');
+          startScreen.classList.remove('hidden');
 
-            function startGame(e) {
-              e.preventDefault();
-              unlockAudio(); // Unlock audio on tap
-
-              // Remove the overlay
-              startScreen.classList.add('hidden');
-            }
-
-            // Handle both click and touchstart events
-            startScreen.addEventListener('click', startGame);
-            startScreen.addEventListener('touchstart', startGame, { passive: false });
+          function startGame(e) {
+            e.preventDefault();
+            unlockAudio(); // Unlock audio on tap
+  
+            // Remove the overlay
+            startScreen.classList.add('hidden');
           }
+  
+          // Handle both click and touchstart events
+          startScreen.addEventListener('click', startGame);
+          startScreen.addEventListener('touchstart', startGame, { passive: false });
         }
 
         // Initialize the start screen when the DOM is fully loaded
